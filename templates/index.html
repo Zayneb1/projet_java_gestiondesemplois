@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des enseignants et des séances de cours</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            background-color: #f0f8ff; /* Bleu clair */
+        }
+        .table-wrapper {
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        .gestion-button {
+            position: absolute;
+            top: 50px;
+            right: 180px;
+        }
+     
+        .button-container{
+            position: absolute;
+            top: 880px;
+            right: 180px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form method="POST" action="{{ url_for('logout') }}">
+            <button class="reset-button" type="submit">
+                <i class="fa fa-sign-out"></i> Déconnexion
+            </button>
+        </form>
+        
+        <div class="form-section">
+            <button onclick="location.href='{{ url_for('etd') }}'" class="gestion-button" type="button">Gestion étudiant</button>
+            <h2>Formulaire d'enregistrement des enseignants</h2>
+            <form method="POST" action="/enregistrer_enseignant">
+                <label for="matricule">Matricule</label>
+                <input type="text" id="matricule" name="matricule" oninput="this.value = this.value.toUpperCase()"  required>
+                <button type="button" onclick="rechercherEnseignant()">CHERCHER</button><br>
+                <label for="nom">Nom</label>
+                <input type="text" id="nom" name="nom" oninput="this.value = this.value.toUpperCase()" required><br>
+                <label for="contact">Contact</label>
+                <input type="text" id="contact" name="contact" maxlength="8" oninput="this.value = this.value.toUpperCase()" required ><br>
+                <button type="submit">ENREGISTRER</button>
+                
+                <button type="button" onclick="modifierEnseignant()">MODIFIER</button>
+                <button type="button" onclick="supprimerEnseignant()">SUPPRIMER</button>
+            </form>
+            <div class="table-wrapper">
+                
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Nom</th>
+                        <th>Contact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enseignant in enseignants %}
+                    <tr>
+                        <td>{{ enseignant.matricule }}</td>
+                        <td>{{ enseignant.nom }}</td>
+                        <td>{{ enseignant.contact }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+        <div class="form-section">
+            <h2>Formulaire d'enregistrement des séances de cours</h2><br>
+            <button onclick="location.href='{{ url_for('emploi_du_temps') }}'" class="button-container" type="button">REQUETES</button>
+            <form method="POST" action="/enregistrer_seance">
+                <label for="classe">Classe</label>
+                <select id="classe" name="classe">
+                    <option value="1eme">1eme</option>
+                    <option value="2eme">2eme</option>
+                    <option value="3eme">3eme</option>
+                    <option value="4eme">4eme</option>
+                    <option value="5eme">5eme</option>
+                    <option value="6eme">6eme</option>
+                    <!-- Ajouter d'autres options de classe si nécessaire -->
+                </select><br>
+                <label for="matiere">Matière</label>
+                <input type="text" id="matiere" name="matiere"><br>
+                <label for="jour">Jour :</label>
+<select id="jour" name="jour">
+    <option value="lundi">Lundi</option>
+    <option value="mardi">Mardi</option>
+    <option value="mercredi">Mercredi</option>
+    <option value="jeudi">Jeudi</option>
+    <option value="vendredi">Vendredi</option>
+    <option value="samedi">Samedi</option>
+
+</select><br>
+
+<label for="heure">Heure :</label>
+<select id="heure" name="heure">
+    <option value="1ereH">1ereH</option>
+    <option value="2emeH">2emeH</option>
+    <option value="3emeH">3emeH</option>
+    <option value="4emeH">4emeH</option>
+    <option value="5emeH">5emeH</option>
+    <option value="1ereH et 2emeH">1ereH et 2emeH</option>
+    <option value="1ereH et 2emeH">2ereH et 3emeH</option>
+    <option value="1ereH et 2emeH">3ereH et 4emeH</option>
+    <option value="1ereH et 2emeH">4ereH et 5emeH</option>
+</select><br>
+
+                <label for="matricule-enseignant">Matricule enseignant</label>
+                <input type="text" id="matricule-enseignant" name="matricule-enseignant" oninput="this.value = this.value.toUpperCase()" required><br>
+                <button type="submit">ENREGISTRER</button>
+                
+            </form>
+            <div class="table-wrapper">
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Classe</th>
+                        <th>Matière</th>
+                        <th>Jour</th>
+                        <th>Heure</th>
+                        <th>Enseignant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seance in seances %}
+                    <tr>
+                        <td>{{ seance.classe }}</td>
+                        <td>{{ seance.matiere }}</td>
+                        <td>{{ seance.jour }}</td>
+                        <td>{{ seance.heure }}</td>
+                        <td>{{ seance.nom_enseignant }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+
+    </div>
+    <script>
+        function rechercherEnseignant() {
+            var nomEnseignant = prompt("Entrez le nom de l'enseignant à rechercher:");
+            fetch('/chercher_enseignant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nom: nomEnseignant
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.nom && data.matricule) {
+                    alert("Nom de l'enseignant : " + data.nom + "\nMatricule : " + data.matricule);
+                } else {
+                    alert(data.message); 
+                }
+            })
+            .catch((error) => {
+                console.error('Erreur:', error);
+            });
+        }
+    </script>
+    
+    <script>
+        function modifierEnseignant() {
+            var matricule = document.getElementById("matricule").value;
+            var nom = document.getElementById("nom").value;
+            var contact = document.getElementById("contact").value;
+    
+           
+            fetch('/modifier_enseignant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `matricule=${matricule}&nom=${nom}&contact=${contact}`,
+            })
+            .then(response => {
+                if (response.ok) {
+        
+                    window.location.reload();
+                } else {
+                    
+                    response.json().then(data => {
+                        alert(data.message);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+    <script>
+        function supprimerEnseignant() {
+            var matricule = document.getElementById("matricule").value;
+    
+          
+            var confirmation = confirm("Are you sure you want to delete this teacher's record?");
+            if (confirmation) {
+               
+                fetch('/supprimer_enseignant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `matricule=${matricule}`,
+                })
+                .then(response => {
+                    if (response.ok) {
+                        
+                        window.location.reload();
+                    } else {
+                     
+                        response.json().then(data => {
+                            alert(data.message);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+    </script>
+    
+</body>
+</html>

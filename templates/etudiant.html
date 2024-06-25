@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des étudiants</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff;
+        }
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .card {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5 mb-4">Liste des étudiants</h1>
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="POST" action="/etd">
+                    <div class="form-group">
+                        <label for="nom">Nom :</label>
+                        <input type="text" class="form-control" id="nom" name="nom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prenom">Prénom :</label>
+                        <input type="text" class="form-control" id="prenom" name="prenom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact">Contact :</label>
+                        <input type="text" class="form-control" id="contact" maxlength="8" name="contact" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="carte_number">Carte d'identité :</label>
+                        <input type="text" class="form-control" id="carte_number" maxlength="8" name="carte_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="classe">Classe :</label>
+                        <select class="form-control" id="classe" name="classe" required>
+                            <option value="1eme">1eme</option>
+                            <option value="2eme">2eme</option>
+                            <option value="3eme">3eme</option>
+                            <option value="4eme">4eme</option>
+                            <option value="5eme">5eme</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter étudiant</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Recherche d'étudiant</h5>
+                <form id="form-recherche" method="POST">
+                    <div class="form-group">
+                        <label for="nom-recherche">Rechercher par nom :</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="nom-recherche" name="nom_recherche" required>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">Rechercher</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Liste des étudiants</h5>
+                <div class="table-wrapper">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Contact</th>
+                                <th>Numéro de carte</th>
+                                <th>Classe</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for etudiant in etudiants %}
+                                <tr>
+                                    <td>{{ etudiant.nom }}</td>
+                                    <td>{{ etudiant.prenom }}</td>
+                                    <td>{{ etudiant.contact }}</td>
+                                    <td>{{ etudiant.carte_number }}</td>
+                                    <td>{{ etudiant.classe }}</td>
+                                    <td>
+                                        <form method="POST" action="/delete/{{ etudiant.id }}">
+                                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Bootstrap -->
+    <div class="modal fade" id="resultatModal" tabindex="-1" role="dialog" aria-labelledby="resultatModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultatModalLabel">Résultats de la recherche</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="resultatModalBody">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.getElementById("form-recherche").addEventListener("submit", function(event) {
+            event.preventDefault()
+            
+            var nomRecherche = document.getElementById("nom-recherche").value;
+            
+           
+            fetch('/rechercher_etudiant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nom_recherche: nomRecherche }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+
+                    var resultHtml = '<ul>';
+                    data.forEach(function(etudiant) {
+                        resultHtml += '<li>Nom : ' + etudiant.nom + ', Prénom : ' + etudiant.prenom + ', Contact : ' + etudiant.contact + ', Numéro de carte : ' + etudiant.carte_number + '</li>';
+                    });
+                    resultHtml += '</ul>';
+                    document.getElementById("resultatModalBody").innerHTML = resultHtml;
+                    $('#resultatModal').modal('show');
+                } else {
+                 
+                    document.getElementById("resultatModalBody").innerHTML = '<p>Aucun étudiant trouvé avec ce nom.</p>';
+                    $('#resultatModal').modal('show');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+            });
+        });
+    </script>
+</body>
+</html>

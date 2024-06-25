@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Emploi du temps</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/emploi_du_temps.css') }}">
+    <style>
+        .table-container {
+            max-height: 500px; 
+            overflow-y: auto; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .reset-button {
+            position: absolute;
+            top: 40px;
+            right: 150px;
+        }
+    </style>
+</head>
+<body>
+    <section>
+        <div class="container">
+          
+           
+    <form method="POST" action="{{ url_for('reinitialiser_table') }}">
+      
+            <button type="submit" >Réinitialiser la table</button>
+        
+    </form>
+    {% if session.get('admin') %}
+    <button class="reset-button" onclick="location.href='{{ url_for('index') }}'" type="button">Retour</button>
+
+                                    {% else %}
+
+                                    
+<form method="POST" action="{{ url_for('logout') }}">
+    <button class="reset-button" type="submit">
+        <i class="fa fa-sign-out"></i> Déconnexion
+    </button>
+</form>
+
+    
+
+
+                                    {% endif %}
+   
+
+
+            <div class="form-section">
+                <h2>Les séances de cours dans la semaine d'une matière dans une classe</h2>
+                <form method="POST" action="{{ url_for('chercher_seances') }}">
+                    <label for="classe">Classe</label>
+                    <select id="classe" name="classe">
+                        <option value="1eme">1eme</option>
+                        <option value="2eme">2eme</option>
+                        <option value="3eme">3eme</option>
+                        <option value="4eme">4eme</option>
+                        <option value="5eme">5eme</option>
+                        <option value="6eme">6eme</option>
+                        <!-- Ajouter d'autres options de classe si nécessaire -->
+                    </select>
+                    <label for="matiere">Matière</label>
+                    <input type="text" id="matiere" name="matiere">
+                    <button type="submit">CHERCHER</button>
+                </form>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Classe</th>
+                                <th>Matière</th>
+                                <th>Jour</th>
+                                <th>Heure</th>
+                                <th>Nom enseignant</th>
+                                <th>Contact enseignant</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seance in seances %}
+                            <tr>
+                                <td>{{ seance.id }}</td>
+                                <td>{{ seance.classe }}</td>
+                                <td>{{ seance.matiere }}</td>
+                                <td>{{ seance.jour }}</td>
+                                <td>{{ seance.heure }}</td>
+                                <td>{{ seance.nom_enseignant }}</td>
+                                <td>{{ seance.contact_enseignant }}</td>
+                                <td>
+                                    {% if session.get('admin') %}
+                                    <button type="button" onclick="supprimerSeance({{ seance.id }})">Supprimer</button>
+                                    {% else %}
+                                    <button type="button" disabled style="background-color: #f2f2f2; color: #ccc;" onclick="supprimerSeance({{ seance.id }})">Supprimer</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function supprimerSeance(id) {
+            if (confirm("Voulez-vous vraiment supprimer cette séance ?")) {
+                fetch('/supprimer_seance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: id }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'Séance supprimée avec succès.') {
+                        alert('La séance a été supprimée avec succès.');
+                        window.location.reload();
+                    } else {
+                        alert('Échec de la suppression de la séance : ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Une erreur s\'est produite lors de la suppression de la séance :', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
